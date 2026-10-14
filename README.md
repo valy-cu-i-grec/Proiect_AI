@@ -33,9 +33,12 @@ To meet the requirements of simulating complex grids, parsing natural language, 
 #### C1: System Context Diagram
 Shows how the user interacts with the CelLab system.
 
+![C1 System Context](Diagrame/UML_C1_AI.png)
 
 #### C2: Container Diagram
 Details the internal modules of the CelLab application.
+
+![C2 Container Diagram](Diagrame/UML_C2_AI.png)
 
 ---
 
