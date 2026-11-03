@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "experiment": "test_run",
+    "author": "Echipa"
+  },
+  "config": {
+    "height": 2,
+    "width": 2,
+    "boundary": "toroidal",
+    "states": null
+  },
+  "total_steps": 3,
+  "frames": [
+    [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    [
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    [
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ]
+    ]
+  ]
+}
