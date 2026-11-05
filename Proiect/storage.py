@@ -233,29 +233,3 @@ class SimulationHistory:
                 return (candidate_step, period)
 
         return None
-
-
-if __name__ == "__main__":
-    # Test rapid independent de Engine
-    print("Testare SimulationHistory...")
-    
-    # Creează câteva grile simulate
-    g0 = Grid.from_matrix([[0, 1], [0, 0]])
-    g1 = Grid.from_matrix([[1, 1], [0, 0]])
-    g2 = Grid.from_matrix([[1, 1], [0, 0]]) # Stare stabilă
-    
-    history = SimulationHistory(metadata={"experiment": "test_run", "author": "Echipa"})
-    history.record(g0)
-    history.record(g1)
-    history.record(g2)
-    
-    print(f"Total cadre salvate: {history.total_steps}")
-    print(f"Celule active la pasul 0: {history.count_state_at_step(0, 1)}")
-    print(f"Celule active la pasul 1: {history.count_state_at_step(1, 1)}")
-    print(f"Pasul la care s-a stabilizat: {history.find_stability_step()}")
-    
-    # Test export / import JSON
-    history.save_to_json("test_history.json")
-    loaded = SimulationHistory.load_from_json("test_history.json")
-    print(f"Cadre reîncărcate din JSON: {loaded.total_steps}")
-    print("Modulul 3 este complet funcțional!")    
