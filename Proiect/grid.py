@@ -133,9 +133,6 @@ class Grid:
         grid._cells[...] = arr  # atribuirea copiază și convertește la dtype-ul grilei
         return grid
 
-    # ------------------------------------------------------------------ #
-    # Proprietăți
-    # ------------------------------------------------------------------ #
     @property
     def height(self) -> int:
         return self._height
@@ -183,9 +180,6 @@ class Grid:
         view.flags.writeable = False
         return view
 
-    # ------------------------------------------------------------------ #
-    # Inițializare
-    # ------------------------------------------------------------------ #
     def init_empty(self, default_val: Any = 0) -> "Grid":
         """Umple toată grila cu `default_val`. Returnează `self` (pentru înlănțuire)."""
         self._check_value(default_val)
@@ -236,9 +230,6 @@ class Grid:
         self._check_coords(r, c)
         return self._cells[r, c].item() if self._dtype.kind != "O" else self._cells[r, c]
 
-    # ------------------------------------------------------------------ #
-    # Vecinătăți
-    # ------------------------------------------------------------------ #
     def get_neighbors(
         self, r: int, c: int, neighborhood: str = "moore", radius: int = 1
     ) -> np.ndarray:
