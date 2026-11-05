@@ -1,17 +1,3 @@
-"""
-CelLab - Modulul 1: Arhitectura de bază și modelul stării (Core & Grid State).
-
-Conține clasa `Grid`, care păstrează starea unui automat celular 1D sau 2D,
-extrage vecinătăți (Moore, von Neumann, 1D) și aplică condiții de frontieră
-(toroidal sau fixed/dead).
-
-Convenții:
-  * Coordonatele sunt (r, c) = (rând, coloană), indexate de la 0.
-  * Un automat 1D este o grilă cu height == 1 (vezi `Grid.one_dimensional`).
-  * Vecinii sunt returnați într-o ordine deterministă (row-major, fără celula
-    centrală), definită de `neighborhood_offsets`.
-"""
-
 from __future__ import annotations
 
 import copy
@@ -25,26 +11,12 @@ Offset = Tuple[int, int]
 
 TOROIDAL = "toroidal"
 FIXED = "fixed"
-# 'dead' este un alias pentru 'fixed' (marginile = valoare implicită, ex. celulă moartă).
 _BOUNDARY_ALIASES = {"toroidal": TOROIDAL, "fixed": FIXED, "dead": FIXED}
 
-# Simboluri implicite pentru afișare; 0 și False au același hash, deci acoperă și bool.
 _DEFAULT_SYMBOLS: Mapping[Hashable, str] = {0: ".", 1: "#"}
-
 
 @lru_cache(maxsize=None)
 def neighborhood_offsets(neighborhood: str = "moore", radius: int = 1) -> Tuple[Offset, ...]:
-    """Returnează deplasamentele (dr, dc) ale unei vecinătăți, fără celula centrală.
-
-    Args:
-        neighborhood: 'moore' (8 vecini la raza 1), 'von_neumann' (4 vecini la
-            raza 1) sau '1d' (stânga/dreapta, pe același rând).
-        radius: raza vecinătății (>= 1). Moore: pătrat (2R+1)^2 - 1;
-            von Neumann: |dr| + |dc| <= R; 1D: 2R vecini.
-
-    Raises:
-        ValueError: pentru tip de vecinătate necunoscut sau rază < 1.
-    """
     if radius < 1:
         raise ValueError(f"radius trebuie să fie >= 1, primit {radius}")
     kind = neighborhood.lower()
@@ -69,25 +41,6 @@ def neighborhood_offsets(neighborhood: str = "moore", radius: int = 1) -> Tuple[
 
 
 class Grid:
-    """Starea unei grile de celule discrete (2D, sau 1D ca grilă cu un singur rând).
-
-    Args:
-        height: numărul de rânduri (>= 1).
-        width: numărul de coloane (>= 1).
-        boundary: 'toroidal' (wrap-around) sau 'fixed' / 'dead' (în afara grilei
-            se citește `fixed_value`).
-        fixed_value: valoarea văzută dincolo de margine în modul 'fixed'.
-            Implicit: 0 (sau False pentru bool; primul element din `states` dacă
-            0 nu este o stare validă).
-        dtype: tipul NumPy al celulelor. Dacă lipsește, se deduce din `states`
-            (bool / int / object pentru etichete) și implicit este int.
-        states: stările permise (opțional). Dacă este dat, orice valoare scrisă
-            în grilă este validată față de el. Poate conține etichete (ex. str).
-        seed: sămânța generatorului aleator folosit de `init_random`.
-
-    Notă: `__eq__` compară doar conținutul celulelor (formă + valori), nu și
-    configurația (frontieră etc.). Obiectul este mutabil, deci nu este hashable.
-    """
 
     def __init__(
         self,
@@ -116,7 +69,6 @@ class Grid:
 
         self._dtype = np.dtype(dtype) if dtype is not None else self._infer_dtype(self._states)
 
-        # Valoarea implicită ("moartă"): 0 / False, sau prima stare dacă 0 nu e permis.
         default: Any = False if self._dtype.kind == "b" else 0
         if self._states is not None and default not in self._states:
             default = self._states[0]
@@ -128,9 +80,6 @@ class Grid:
         self._rng = np.random.default_rng(seed)
         self._cells = np.full((self._height, self._width), default, dtype=self._dtype)
 
-    # ------------------------------------------------------------------ #
-    # Constructori alternativi
-    # ------------------------------------------------------------------ #
     @classmethod
     def one_dimensional(cls, width: int, **kwargs: Any) -> "Grid":
         """Creează o grilă 1D (height == 1). Acceptă aceleași argumente ca `Grid`."""
@@ -158,7 +107,7 @@ class Grid:
         """
         try:
             arr = np.asarray(matrix, dtype=dtype)
-        except ValueError as exc:  # NumPy >= 1.24 refuză structurile neregulate
+        except ValueError as exc:
             raise ValueError("Matricea trebuie să fie regulată (rânduri de aceeași lungime)") from exc
         if arr.dtype == object and arr.ndim == 1 and any(isinstance(x, (list, tuple)) for x in arr):
             raise ValueError("Matricea trebuie să fie regulată (rânduri de aceeași lungime)")
@@ -332,15 +281,7 @@ class Grid:
         result.update({k: v for k, v in counts.items() if k not in result})
         return result
 
-    # ------------------------------------------------------------------ #
-    # Clonare, egalitate, afișare
-    # ------------------------------------------------------------------ #
     def clone(self) -> "Grid":
-        """Copie complet independentă (celule + configurație + stare RNG).
-
-        Folosită pentru double buffering: se calculează generația următoare în
-        clonă, fără a modifica starea curentă.
-        """
         new = object.__new__(type(self))
         new.__dict__.update(self.__dict__)
         new._cells = self._cells.copy()
@@ -355,16 +296,9 @@ class Grid:
             return NotImplemented
         return self.shape == other.shape and bool(np.array_equal(self._cells, other._cells))
 
-    __hash__ = None  # type: ignore[assignment]  # obiect mutabil
+    __hash__ = None
 
     def render(self, symbols: Optional[Mapping[Hashable, str]] = None) -> str:
-        """Reprezentarea text a grilei.
-
-        Args:
-            symbols: mapare stare -> text. Implicit 0 -> '.', 1 -> '#'; stările
-                nemapate sunt afișate cu `str()`. Dacă un simbol are mai multe
-                caractere, coloanele sunt aliniate și separate printr-un spațiu.
-        """
         table = _DEFAULT_SYMBOLS if symbols is None else symbols
         rows = [[table.get(v, str(v)) for v in row] for row in self._cells.tolist()]
         cell_width = max(len(s) for row in rows for s in row)
@@ -372,7 +306,6 @@ class Grid:
         return "\n".join(sep.join(s.rjust(cell_width) for s in row) for row in rows)
 
     def pretty_print(self, symbols: Optional[Mapping[Hashable, str]] = None) -> None:
-        """Afișează grila în consolă (vezi `render`)."""
         print(self.render(symbols))
 
     def __str__(self) -> str:
@@ -384,9 +317,6 @@ class Grid:
             f"boundary={self._boundary!r}, dtype={self._dtype})"
         )
 
-    # ------------------------------------------------------------------ #
-    # Helperi interni
-    # ------------------------------------------------------------------ #
     @staticmethod
     def _normalize_boundary(boundary: str) -> str:
         try:
@@ -420,10 +350,6 @@ class Grid:
             if invalid:
                 raise ValueError(f"Valori care nu sunt stări permise: {sorted(invalid, key=repr)}")
 
-
-# ---------------------------------------------------------------------- #
-# Demonstrație / teste rapide:  python grid.py
-# ---------------------------------------------------------------------- #
 def _demo() -> None:
     import sys
 
@@ -441,7 +367,7 @@ def _demo() -> None:
     assert rnd == Grid(4, 8, seed=42).init_random([0, 1], probabilities=[0.7, 0.3])  # reproductibil
 
     m = g.matrix
-    m[0, 0] = 99  # modificarea copiei nu afectează grila
+    m[0, 0] = 99 
     assert g.get_cell(0, 0) == 0
     try:
         g.readonly_view()[0, 0] = 5
@@ -452,8 +378,8 @@ def _demo() -> None:
     print("=== 2. Vecini 2D: toroidal vs fixed (celula (0,0)) ===")
     data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     torus = Grid.from_matrix(data, boundary="toroidal")
-    fixed = Grid.from_matrix(data, boundary="fixed")  # 'dead' e echivalent
-    print(torus.render({}), "\n")  # {} = fără simboluri, se afișează valorile numerice
+    fixed = Grid.from_matrix(data, boundary="fixed") 
+    print(torus.render({}), "\n") 
     for kind in ("moore", "von_neumann"):
         t = torus.get_neighbors(0, 0, kind).tolist()
         f = fixed.get_neighbors(0, 0, kind).tolist()
@@ -487,7 +413,7 @@ def _demo() -> None:
     nxt = g.clone()
     assert nxt == g and nxt is not g
     nxt.set_cell(0, 0, 1)
-    assert nxt != g and g.get_cell(0, 0) == 0  # originalul rămâne neschimbat
+    assert nxt != g and g.get_cell(0, 0) == 0 
     print("original:\n" + str(g) + "\nclonă modificată:\n" + str(nxt))
 
     print("\n=== 6. Etichete definite de utilizator ===")
@@ -513,7 +439,6 @@ def _demo() -> None:
             print(f"OK {type(e).__name__}: {e}")
 
     print("\nToate verificările au trecut.")
-
 
 if __name__ == "__main__":
     _demo()

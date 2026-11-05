@@ -1,15 +1,21 @@
-# models/rule30.py
 from grid import Grid
+from engine import CellularRule
 
-def rule30_transition(current_state: int, neighbors: list) -> int:
-    left = neighbors[0]
-    right = neighbors[1]
+class Rule30(CellularRule):
     
-    pattern = (left, current_state, right)
-    
-    if pattern in [(1, 0, 0), (0, 1, 1), (0, 1, 0), (0, 0, 1)]:
-        return 1
-    return 0
+    @property
+    def neighborhood_type(self) -> str:
+        return "1d"
+
+    def apply(self, current_state: int, neighbors: list) -> int:
+        left = neighbors[0]
+        right = neighbors[1]
+        
+        pattern = (left, current_state, right)
+        
+        if pattern in [(1, 0, 0), (0, 1, 1), (0, 1, 0), (0, 0, 1)]:
+            return 1
+        return 0
 
 def setup_rule30(width: int = 31) -> Grid:
     grid = Grid.one_dimensional(width, boundary="toroidal", dtype=int)
