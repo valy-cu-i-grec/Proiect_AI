@@ -3,46 +3,24 @@ from typing import List, Any, Generator
 
 
 class CellularRule(ABC):
-    """
-    Clasa de bază pentru orice regulă de automat celular.
-    Colegul de la Modulul 4 va moșteni această clasă pentru a crea Conway, Rule 30, etc.
-    """
-    
     @property
     @abstractmethod
     def neighborhood_type(self) -> str:
-        """
-        Returnează tipul de vecinătate necesar (ex: 'moore', 'von_neumann', '1d').
-        """
         pass
 
     @abstractmethod
     def apply(self, cell_state: Any, neighbors: List[Any]) -> Any:
-        """
-        Aplică regula pentru o singură celulă.
-        
-        :param cell_state: Starea curentă a celulei.
-        :param neighbors: Lista cu stările vecinilor.
-        :return: Noua stare a celulei.
-        """
         pass
 
 
 
 class AutomatonEngine:
-    """
-    Motorul care execută tranzițiile generațiilor folosind un Grid și o Regulă.
-    """
     
     def __init__(self, initial_grid: Any, rule: CellularRule):
         self.current_grid = initial_grid
         self.rule = rule
 
     def step(self) -> Any:
-        """
-        Avansează simularea cu o singură generație (mod sincron / double buffering).
-        Returnează noua grilă.
-        """
         next_grid = self.current_grid.clone()
         
         for r in range(self.current_grid.height):
@@ -57,14 +35,6 @@ class AutomatonEngine:
         return self.current_grid
 
     def run(self, steps: int) -> Generator[Any, None, None]:
-        """
-        Rulează simularea pentru un număr dat de pași.
-        Implementat ca generator pentru ca Modulul 3 (Istoric) să poată capta 
-        fiecare stare din mers, fără a cupla strâns modulele.
-        
-        :param steps: Numărul de generații de simulat.
-        :yield: Grila după fiecare pas.
-        """
         yield self.current_grid 
         
         for _ in range(steps):
